@@ -1,21 +1,40 @@
-const API = 'https://leetcode-stats-api.herokuapp.com/';
+
 const profiles = [
-    'bhupendraparihar',
-    'neal_wu'
+    'subash10oct2k',
+    'shivani_1032',
+    'konamonimahesh',
+    'sridharreddy-p16',
+    'shubhambawad',
+    'nikhilpatil5252',
+    'KishoreRSK',
+    'ajinkyasatkar007',
+    'akshayandy847',
+    'vaibhavgp7436',
+    'tanwar_abhi'
 ];
 
-const axios = require('axios');
 const xl = require('excel4node');
+const { LeetCode } = require('leetcode-query');
 
 async function getProfilesData() {
     const result = [];
-    for (let profile of profiles) {
-        console.log(profile);
-        const response = await axios.get(API + profile);
-        result.push({profile, ...response.data});
+    const leetcode = new LeetCode();
+    
+    for (let username of profiles) {
+        const user = await leetcode.user(username);
+        const submissionRecord = {};
+        user.matchedUser.submitStats.acSubmissionNum.forEach(record => {
+            submissionRecord[record.difficulty.toLowerCase()] = record.count;
+        })
+
+        const userData = { 
+            username, 
+            ranking: user.matchedUser.profile.ranking,
+            ...submissionRecord };
+        result.push(userData);
+        console.log(userData);
     }
 
-    console.log(result);
     return result;
 }
 
@@ -42,29 +61,29 @@ async function createExcelReport() {
             patternType: 'solid',
             bgColor: '#FFFF00',
             fgColor: '#FFFF00',
-          }
+        }
     });
 
 
     ws.cell(1, 1).string("USERNAME").style(style);
-    ws.cell(1,2).string("TOTAL_SOLVED").style(style);
-    ws.cell(1,3).string("EASY_SOLVED").style(style);
-    ws.cell(1,4).string("MEDIUM_SOLVED").style(style);
-    ws.cell(1,5).string("HARD_SOLVED").style(style);
-    ws.cell(1,6).string("RANKING").style(style);
+    ws.cell(1, 2).string("TOTAL_SOLVED").style(style);
+    ws.cell(1, 3).string("EASY_SOLVED").style(style);
+    ws.cell(1, 4).string("MEDIUM_SOLVED").style(style);
+    ws.cell(1, 5).string("HARD_SOLVED").style(style);
+    ws.cell(1, 6).string("RANKING").style(style);
 
     const result = await getProfilesData();
 
     result.forEach((record, index) => {
-        ws.cell(index + 2, 1).string(record.profile);
-        ws.cell(index + 2, 2).number(record.totalSolved);
-        ws.cell(index + 2, 3).number(record.easySolved);
-        ws.cell(index + 2, 4).number(record.mediumSolved);
-        ws.cell(index + 2, 5).number(record.hardSolved);
+        ws.cell(index + 2, 1).string(record.username);
+        ws.cell(index + 2, 2).number(record.all);
+        ws.cell(index + 2, 3).number(record.easy);
+        ws.cell(index + 2, 4).number(record.medium);
+        ws.cell(index + 2, 5).number(record.hard);
         ws.cell(index + 2, 6).number(record.ranking);
     });
-    
-    wb.write('LeetCode-'+getDateInFormat() + '.xlsx');
+
+    wb.write('LeetCode-' + getDateInFormat() + '.xlsx');
 }
 
 function getDateInFormat() {
@@ -81,4 +100,4 @@ function getDateInFormat() {
     return formattedToday;
 }
 
-createExcelReport();
+createExcelReport(); 
